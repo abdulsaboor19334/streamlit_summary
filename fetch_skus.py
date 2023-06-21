@@ -21,3 +21,8 @@ def get_skus():
         category_name = pd.NamedAgg(column="category_id",aggfunc=assign_name)
     )
     return sku_per_catagroy
+
+def get_products():
+    path = "./products.csv" 
+    product_data = pd.read_csv(path)
+    return product_data
