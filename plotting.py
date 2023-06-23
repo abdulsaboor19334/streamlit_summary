@@ -24,6 +24,23 @@ def plot_order_per_day(mtd,main):
     fig.tight_layout()
     return fig
 
+def plot_order_per_day_single(df):
+    fig,ax = plt.subplots(figsize=(15, 15))
+
+    df_group = df.groupby(df.date.dt.date).agg(
+        total = pd.NamedAgg(column="shop_total",aggfunc="count")
+    )
+
+    plt.xticks(fontsize=25)
+    plt.rcParams.update({'font.size': 25})
+
+    sns.lineplot(df_group,ax=ax).set(title="Order/day df")
+
+    ax.tick_params(labelsize=16, labelrotation=45)
+
+    fig.tight_layout()
+    return fig
+
 def top_10_category_by_sale(df):
     category_wise_sale = df.groupby("category_id",as_index=False).agg(
         total_count = pd.NamedAgg(column="shop_total",aggfunc="count"),

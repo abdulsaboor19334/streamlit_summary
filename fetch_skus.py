@@ -23,6 +23,8 @@ def get_skus():
     return sku_per_catagroy
 
 def get_products():
-    path = "./products.csv" 
-    product_data = pd.read_csv(path)
+    path = "./products.csv"
+    product_data = pd.read_csv(path).groupby("sku",as_index=False).agg(
+        name = pd.NamedAgg(column="name",aggfunc="first")
+    )
     return product_data
