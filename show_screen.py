@@ -91,38 +91,34 @@ def master_archive(df):
     csv = pd.read_csv(df)
     csv.columns = [col.lower().strip().replace(" ","_") for col in csv.columns]
     csv["date"] = pd.to_datetime(csv.date, format="%d/%m/%Y")
-    csv = csv.loc[~csv["sku_name"].isna()]
+    csv = csv.loc[~csv["shop_total"].isna()]
 
     def assign_num(x):
         encode = b64encode(os.urandom(11)).decode('utf8')  
         return encode
+    
     csv["order_number"] = csv.order_number.apply(assign_num)
 
-    def rename(hub):
-        if "abbas" in hub.lower():
-            return "Abbas"
-        elif "johar" in hub.lower():
-            return "Johar"
-        elif "buffer" in hub.lower():
-            return "Buffer"
-        elif "nagan" in hub.lower():
-            return "Nagan"
-        elif "anwar" in hub.lower():
-            return "Anwar"
+    def nunique(series):
+        return series.nunique()
+    
+    month_condition = csv.date.dt.month==datetime.date.today().month
+    year_condition = csv.date.dt.year==datetime.date.today().year
 
-    csv["hub_name"] = csv.hub_name.apply(rename)
+    cleaned = csv.loc[(month_condition)&(year_condition)]
+    total_group = cleaned.groupby("hub_name").agg(
+        gmv = pd.NamedAgg(column="shop_total",aggfunc="sum"),
+        aov = pd.NamedAgg(column="shop_total",aggfunc="mean"),
+        orders = pd.NamedAgg(column="order_number",aggfunc=nunique)
+    ).sort_values("hub_name")
+
+    st.metric("Total Sales",total_group.gmv.sum())
     
     sku = get_skus()
     products = get_products()
 
     main = csv.merge(sku,left_on="sku_id",right_on="sku",how="left").merge(products,on="sku",how='left')
 
-    total_group = main.groupby("hub_name").agg(
-        shop_total = pd.NamedAgg(column="shop_total",aggfunc="sum"),
-        aov = pd.NamedAgg(column="shop_total",aggfunc="mean")
-    ).sort_values("hub_name")
-
-    st.metric("Total Sales",total_group.shop_total.sum())
     st.metric(
         "Aov derived",
         round(main.shop_total.sum()/len(main.order_number.unique())),
